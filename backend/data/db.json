@@ -1,0 +1,495 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "username": "admin",
+      "password": "admin123",
+      "role": "admin",
+      "segment": "Premium",
+      "name": "Alex Johnson"
+    },
+    {
+      "id": 2,
+      "username": "john",
+      "password": "john123",
+      "role": "user",
+      "segment": "Regular",
+      "name": "John Smith"
+    },
+    {
+      "id": 3,
+      "username": "sara",
+      "password": "sara123",
+      "role": "user",
+      "segment": "Budget",
+      "name": "Sara Lee"
+    }
+  ],
+  "products": [
+    {
+      "id": 1,
+      "name": "Wireless Pro Headphones",
+      "category": "Electronics",
+      "image": "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=280&fit=crop",
+      "basePrice": 299.99,
+      "currentPrice": 319.99,
+      "aiPrice": 316.75,
+      "competitorPrice": 309.99,
+      "demand": 86,
+      "stock": 42,
+      "rating": 4.5,
+      "reviews": 128,
+      "sentiment": 72,
+      "priceHistory": [
+        309.99,
+        316.5,
+        319.99,
+        322,
+        319.99,
+        327.5,
+        319.83,
+        316.75
+      ],
+      "reasons": [
+        "High demand +8%",
+        "Competitor match"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Smart Fitness Watch",
+      "category": "Wearables",
+      "image": "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=280&fit=crop",
+      "basePrice": 199.99,
+      "currentPrice": 179.99,
+      "aiPrice": 168.26,
+      "competitorPrice": 189.99,
+      "demand": 35,
+      "stock": 120,
+      "rating": 4.2,
+      "reviews": 95,
+      "sentiment": 55,
+      "priceHistory": [
+        189.99,
+        184.99,
+        179.99,
+        177,
+        179.99,
+        172.4,
+        169.31,
+        168.26
+      ],
+      "reasons": [
+        "Low demand -7%"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "4K Gaming Monitor",
+      "category": "Electronics",
+      "image": "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=400&h=280&fit=crop",
+      "basePrice": 549.99,
+      "currentPrice": 589.99,
+      "aiPrice": 588.27,
+      "competitorPrice": 579.99,
+      "demand": 90,
+      "stock": 15,
+      "rating": 4.7,
+      "reviews": 67,
+      "sentiment": 81,
+      "priceHistory": [
+        569.99,
+        575,
+        579.99,
+        589.99,
+        599.99,
+        612.8,
+        583.84,
+        588.27
+      ],
+      "reasons": [
+        "High demand +8%",
+        "Low stock +5%",
+        "Competitor match"
+      ]
+    },
+    {
+      "id": 4,
+      "name": "Mechanical Keyboard RGB",
+      "category": "Accessories",
+      "image": "https://images.unsplash.com/photo-1541140532154-b024d705b90a?w=400&h=280&fit=crop",
+      "basePrice": 129.99,
+      "currentPrice": 119.99,
+      "aiPrice": 109.94,
+      "competitorPrice": 124.99,
+      "demand": 35,
+      "stock": 200,
+      "rating": 4.3,
+      "reviews": 213,
+      "sentiment": 48,
+      "priceHistory": [
+        124.99,
+        122,
+        119.99,
+        118.5,
+        119.99,
+        116.2,
+        111.35,
+        109.94
+      ],
+      "reasons": [
+        "Low demand -7%"
+      ]
+    },
+    {
+      "id": 5,
+      "name": "Noise Cancelling Earbuds",
+      "category": "Audio",
+      "image": "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=400&h=280&fit=crop",
+      "basePrice": 149.99,
+      "currentPrice": 162.99,
+      "aiPrice": 160.64,
+      "competitorPrice": 155.99,
+      "demand": 71,
+      "stock": 55,
+      "rating": 4.6,
+      "reviews": 344,
+      "sentiment": 78,
+      "priceHistory": [
+        156.99,
+        159.99,
+        162.99,
+        164.5,
+        162.99,
+        167.3,
+        162.54,
+        160.64
+      ],
+      "reasons": []
+    },
+    {
+      "id": 6,
+      "name": "Portable SSD 1TB",
+      "category": "Storage",
+      "image": "https://images.unsplash.com/photo-1531492053547-d8ef1cfbf4dd?w=400&h=280&fit=crop",
+      "basePrice": 89.99,
+      "currentPrice": 84.99,
+      "aiPrice": 78.55,
+      "competitorPrice": 87.99,
+      "demand": 27,
+      "stock": 310,
+      "rating": 4.4,
+      "reviews": 178,
+      "sentiment": 62,
+      "priceHistory": [
+        86.99,
+        85.5,
+        84.99,
+        84,
+        84.99,
+        83.1,
+        79.93,
+        78.55
+      ],
+      "reasons": [
+        "Low demand -7%"
+      ]
+    }
+  ],
+  "reviews": [
+    {
+      "id": 1,
+      "productId": 1,
+      "user": "Alice M.",
+      "avatar": "AM",
+      "text": "Absolutely amazing sound quality! Best I've ever owned.",
+      "rating": 5,
+      "sentiment": "positive",
+      "date": "2026-02-20"
+    },
+    {
+      "id": 2,
+      "productId": 1,
+      "user": "Bob K.",
+      "avatar": "BK",
+      "text": "Great build quality but a bit expensive for what you get.",
+      "rating": 3,
+      "sentiment": "neutral",
+      "date": "2026-02-18"
+    },
+    {
+      "id": 3,
+      "productId": 1,
+      "user": "Carol P.",
+      "avatar": "CP",
+      "text": "Terrible battery life, very disappointed with purchase!",
+      "rating": 1,
+      "sentiment": "negative",
+      "date": "2026-02-15"
+    },
+    {
+      "id": 4,
+      "productId": 2,
+      "user": "Dan S.",
+      "avatar": "DS",
+      "text": "Love this watch! Super accurate fitness tracking and great battery life.",
+      "rating": 5,
+      "sentiment": "positive",
+      "date": "2026-02-22"
+    },
+    {
+      "id": 5,
+      "productId": 2,
+      "user": "Eve L.",
+      "avatar": "EL",
+      "text": "Decent smartwatch but nothing really special compared to others.",
+      "rating": 3,
+      "sentiment": "neutral",
+      "date": "2026-02-19"
+    },
+    {
+      "id": 6,
+      "productId": 3,
+      "user": "Frank G.",
+      "avatar": "FG",
+      "text": "Incredible display! Colors are vivid and the response time is ultra fast.",
+      "rating": 5,
+      "sentiment": "positive",
+      "date": "2026-02-25"
+    },
+    {
+      "id": 7,
+      "productId": 3,
+      "user": "Grace H.",
+      "avatar": "GH",
+      "text": "Worth every penny. Gaming at 4K is phenomenal.",
+      "rating": 4,
+      "sentiment": "positive",
+      "date": "2026-02-21"
+    },
+    {
+      "id": 8,
+      "productId": 4,
+      "user": "Henry J.",
+      "avatar": "HJ",
+      "text": "Very disappointed. Keys feel mushy and the RGB software is buggy.",
+      "rating": 1,
+      "sentiment": "negative",
+      "date": "2026-02-17"
+    },
+    {
+      "id": 9,
+      "productId": 5,
+      "user": "Iris M.",
+      "avatar": "IM",
+      "text": "Perfect noise cancellation, great for working from home. Love them!",
+      "rating": 5,
+      "sentiment": "positive",
+      "date": "2026-02-23"
+    },
+    {
+      "id": 10,
+      "productId": 6,
+      "user": "Jack N.",
+      "avatar": "JN",
+      "text": "Super fast transfer speeds and very compact design. Highly recommend!",
+      "rating": 5,
+      "sentiment": "positive",
+      "date": "2026-02-24"
+    }
+  ],
+  "competitors": [
+    {
+      "name": "TechZone",
+      "prices": {
+        "1": 309.99,
+        "2": 189.99,
+        "3": 579.99,
+        "4": 124.99,
+        "5": 155.99,
+        "6": 87.99
+      }
+    },
+    {
+      "name": "GadgetHub",
+      "prices": {
+        "1": 314.99,
+        "2": 194.99,
+        "3": 569.99,
+        "4": 119.99,
+        "5": 149.99,
+        "6": 84.99
+      }
+    },
+    {
+      "name": "ElectroPrime",
+      "prices": {
+        "1": 299.99,
+        "2": 184.99,
+        "3": 599.99,
+        "4": 129.99,
+        "5": 159.99,
+        "6": 89.99
+      }
+    }
+  ],
+  "pricingRules": [
+    {
+      "id": 1,
+      "name": "High Demand Surge",
+      "description": "Increase price when demand > 80%",
+      "condition": "demand > 80",
+      "adjustment": 8,
+      "type": "percent",
+      "direction": "increase",
+      "active": true
+    },
+    {
+      "id": 2,
+      "name": "Low Stock Premium",
+      "description": "Add premium when stock < 20 units",
+      "condition": "stock < 20",
+      "adjustment": 5,
+      "type": "percent",
+      "direction": "increase",
+      "active": true
+    },
+    {
+      "id": 3,
+      "name": "Competitor Match",
+      "description": "Adjust if 10% above competitor",
+      "condition": "price > competitor * 1.10",
+      "adjustment": 2,
+      "type": "percent",
+      "direction": "above_competitor",
+      "active": true
+    },
+    {
+      "id": 4,
+      "name": "Low Demand Discount",
+      "description": "Reduce price when demand < 40%",
+      "condition": "demand < 40",
+      "adjustment": 7,
+      "type": "percent",
+      "direction": "decrease",
+      "active": true
+    },
+    {
+      "id": 5,
+      "name": "Negative Sentiment Cut",
+      "description": "Reduce when sentiment score < 50%",
+      "condition": "sentiment < 50",
+      "adjustment": 10,
+      "type": "percent",
+      "direction": "decrease",
+      "active": false
+    }
+  ],
+  "segments": [
+    {
+      "id": 1,
+      "name": "Premium",
+      "color": "#8b5cf6",
+      "size": 1240,
+      "avgSpend": 450,
+      "description": "High-spending loyal customers",
+      "recommendations": [
+        1,
+        3,
+        5
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Regular",
+      "color": "#0ea5e9",
+      "size": 5820,
+      "avgSpend": 180,
+      "description": "Average buyers with moderate frequency",
+      "recommendations": [
+        2,
+        4,
+        5
+      ]
+    },
+    {
+      "id": 3,
+      "name": "Budget",
+      "color": "#10b981",
+      "size": 8930,
+      "avgSpend": 65,
+      "description": "Price-sensitive occasional shoppers",
+      "recommendations": [
+        4,
+        6
+      ]
+    },
+    {
+      "id": 4,
+      "name": "New Users",
+      "color": "#f59e0b",
+      "size": 3200,
+      "avgSpend": 90,
+      "description": "First-time visitors and signups",
+      "recommendations": [
+        2,
+        6
+      ]
+    }
+  ],
+  "analytics": {
+    "weeklyRevenue": [
+      42000,
+      58000,
+      51000,
+      67000,
+      73000,
+      62000,
+      79000
+    ],
+    "weeklyOrders": [
+      320,
+      445,
+      390,
+      512,
+      560,
+      478,
+      610
+    ],
+    "revenueByCategory": {
+      "Electronics": 48200,
+      "Wearables": 23400,
+      "Audio": 19800,
+      "Accessories": 12500,
+      "Storage": 8900
+    },
+    "aiPriceChanges": [
+      0.5,
+      1.2,
+      -0.8,
+      2.1,
+      1.5,
+      -0.3,
+      3.2,
+      2.8,
+      -1.1,
+      4,
+      2.5,
+      1.9
+    ],
+    "demandTrend": [
+      55,
+      62,
+      58,
+      70,
+      75,
+      68,
+      80,
+      77,
+      83,
+      79,
+      85,
+      88
+    ]
+  }
+}

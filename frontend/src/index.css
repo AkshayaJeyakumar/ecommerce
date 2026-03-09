@@ -1,0 +1,182 @@
+@import "tailwindcss";
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700;800&display=swap');
+
+/* ── CSS Custom Properties ── */
+:root {
+  --bg-900: #050711;
+  --bg-800: #0a0d1a;
+  --bg-700: #0f1224;
+  --bg-600: #151930;
+  --bg-card: #131627;
+  --border: #1e2240;
+  --border-light: #252a4a;
+  --primary: #6c63ff;
+  --primary-dark: #5a52e0;
+  --primary-glow: rgba(108, 99, 255, 0.35);
+  --accent: #f43f5e;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --info: #0ea5e9;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  font-family: 'Inter', sans-serif;
+}
+
+body {
+  background: var(--bg-900);
+  color: #e2e8f0;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Tailwind-compatible custom utilities */
+.font-grotesk {
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-700);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-light);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
+
+/* Glassmorphism card */
+.glass {
+  background: rgba(19, 22, 39, 0.7);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--border);
+}
+
+/* Glow effects */
+.glow-purple {
+  box-shadow: 0 0 30px rgba(108, 99, 255, 0.3);
+}
+
+.glow-green {
+  box-shadow: 0 0 30px rgba(16, 185, 129, 0.3);
+}
+
+.glow-red {
+  box-shadow: 0 0 30px rgba(244, 63, 94, 0.3);
+}
+
+/* Animated gradient background */
+.gradient-bg {
+  background: linear-gradient(135deg, #050711 0%, #0f0b24 50%, #050711 100%);
+}
+
+/* Number font */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Chart container */
+.chart-wrap {
+  position: relative;
+  width: 100%;
+}
+
+/* ══════════════════════════════
+   LIGHT MODE THEME OVERRIDES
+   ══════════════════════════════ */
+body.light-mode {
+  --bg-900: #f0f2ff;
+  --bg-800: #e8eaf8;
+  --bg-700: #ffffff;
+  --bg-600: #f4f5fc;
+  --bg-card: #ffffff;
+  --border: #d4d8f0;
+  --border-light: #c4c9e8;
+  background: #f0f2ff !important;
+  color: #1a1d3a !important;
+}
+
+body.light-mode * {
+  --tw-text-opacity: 1;
+}
+
+/* Override all the hardcoded dark backgrounds in inline styles */
+body.light-mode [style*="background: #050711"],
+body.light-mode [style*="background: #0a0d1a"],
+body.light-mode [style*="background: #0f1224"],
+body.light-mode [style*="background: #151930"],
+body.light-mode [style*="background: '#050711'"],
+body.light-mode [style*="background: '#0a0d1a'"],
+body.light-mode [style*="background: '#0f1224'"] {
+  background: #ffffff !important;
+}
+
+body.light-mode [style*="background: #1a1e38"],
+body.light-mode [style*="background: #1e2240"],
+body.light-mode [style*="background: rgba(30,34,64"] {
+  background: #f0f2ff !important;
+}
+
+body.light-mode [style*="border: '1px solid #1e2240'"],
+body.light-mode [style*="border-color: #1e2240"] {
+  border-color: #d4d8f0 !important;
+}
+
+/* Text overrides in light mode */
+body.light-mode .text-white,
+body.light-mode [style*="color: white"],
+body.light-mode [style*="color: '#94a3b8'"],
+body.light-mode [style*="color: '#e2e8f0'"] {
+  color: #1a1d3a !important;
+}
+
+body.light-mode [style*="color: '#4a5580'"] {
+  color: #5a6080 !important;
+}
+
+body.light-mode .text-slate-400 {
+  color: #5a6080 !important;
+}
+
+body.light-mode .text-slate-500 {
+  color: #6a7088 !important;
+}
+
+/* Sidebar + header in light mode */
+body.light-mode aside,
+body.light-mode header {
+  background: #ffffff !important;
+  border-color: #d4d8f0 !important;
+}
+
+/* Card surface class */
+body.light-mode .glass {
+  background: rgba(255, 255, 255, 0.85) !important;
+  border-color: #d4d8f0 !important;
+}
+
+/* Scrollbar in light mode */
+body.light-mode ::-webkit-scrollbar-track {
+  background: #f0f2ff;
+}
+
+body.light-mode ::-webkit-scrollbar-thumb {
+  background: #c4c9e8;
+}
