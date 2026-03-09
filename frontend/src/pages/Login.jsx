@@ -106,22 +106,7 @@ export default function Login() {
                             </div>
                         </div>
 
-                        {/* Demo credentials */}
-                        {tab === 'login' && (
-                            <div className="rounded-xl p-3" style={{ background: 'rgba(108,99,255,0.08)', border: '1px solid rgba(108,99,255,0.2)' }}>
-                                <div className="text-xs font-semibold mb-2" style={{ color: '#6c63ff' }}>🎯 DEMO CREDENTIALS</div>
-                                <div className="flex gap-2 flex-wrap">
-                                    <button type="button" onClick={() => fillDemo('admin@aipricing.com', 'admin123')}
-                                        className="text-xs px-3 py-1.5 rounded-lg font-medium" style={{ background: 'rgba(108,99,255,0.2)', color: '#a5b4fc' }}>
-                                        Admin: admin@aipricing.com
-                                    </button>
-                                    <button type="button" onClick={() => fillDemo('akshaya@example.com', 'user123')}
-                                        className="text-xs px-3 py-1.5 rounded-lg font-medium" style={{ background: 'rgba(16,185,129,0.15)', color: '#6ee7b7' }}>
-                                        User: akshaya@example.com
-                                    </button>
-                                </div>
-                            </div>
-                        )}
+
 
                         <AnimatePresence>
                             {error && (

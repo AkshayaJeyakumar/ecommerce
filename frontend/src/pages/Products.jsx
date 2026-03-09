@@ -49,31 +49,39 @@ function ProductCard({ product, onWishlist, wishlist, isAdmin }) {
                     style={{ background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(6px)' }}>
                     {wished ? '❤️' : '🤍'}
                 </button>
-                <span className="absolute bottom-2 right-2 text-xs px-2 py-0.5 rounded-full font-bold"
-                    style={{ background: parseFloat(delta) >= 0 ? 'rgba(16,185,129,0.8)' : 'rgba(244,63,94,0.8)', color: 'white' }}>
-                    {parseFloat(delta) >= 0 ? '+' : ''}{delta}%
-                </span>
+                {/* Delta badge: admin only */}
+                {isAdmin && (
+                    <span className="absolute bottom-2 right-2 text-xs px-2 py-0.5 rounded-full font-bold"
+                        style={{ background: parseFloat(delta) >= 0 ? 'rgba(16,185,129,0.8)' : 'rgba(244,63,94,0.8)', color: 'white' }}>
+                        {parseFloat(delta) >= 0 ? '+' : ''}{delta}%
+                    </span>
+                )}
             </div>
             <div className="p-4">
                 <h3 className="text-sm font-semibold text-white leading-tight mb-1 truncate">{product.name}</h3>
                 {product.subCategory && <div className="text-xs mb-2" style={{ color: '#6c63ff' }}>{product.subCategory}</div>}
+                {/* Price row */}
                 <div className="flex items-baseline gap-2 mb-3">
                     <span className="font-grotesk font-bold text-lg" style={{ color: '#6c63ff' }}>{fmt(product.aiPrice)}</span>
-                    <span className="text-xs line-through" style={{ color: '#4a5580' }}>{fmt(product.basePrice)}</span>
+                    {/* Base price + strikethrough only for admin */}
+                    {isAdmin && <span className="text-xs line-through" style={{ color: '#4a5580' }}>{fmt(product.basePrice)}</span>}
                 </div>
-                <div className="space-y-1.5 mb-3">
-                    <div className="flex justify-between text-xs">
-                        <span style={{ color: '#4a5580' }}>Demand</span>
-                        <span style={{ color: demandColor(product.demand) }}>{product.demand}%</span>
+                {/* Demand + competitor: admin only */}
+                {isAdmin && (
+                    <div className="space-y-1.5 mb-3">
+                        <div className="flex justify-between text-xs">
+                            <span style={{ color: '#4a5580' }}>Demand</span>
+                            <span style={{ color: demandColor(product.demand) }}>{product.demand}%</span>
+                        </div>
+                        <div className="h-1.5 rounded-full" style={{ background: '#1e2240' }}>
+                            <div className="h-full rounded-full" style={{ width: `${product.demand}%`, background: demandColor(product.demand) }} />
+                        </div>
+                        <div className="flex justify-between text-xs">
+                            <span style={{ color: '#4a5580' }}>Competitor</span>
+                            <span style={{ color: '#94a3b8' }}>{fmt(product.competitorPrice)}</span>
+                        </div>
                     </div>
-                    <div className="h-1.5 rounded-full" style={{ background: '#1e2240' }}>
-                        <div className="h-full rounded-full" style={{ width: `${product.demand}%`, background: demandColor(product.demand) }} />
-                    </div>
-                    <div className="flex justify-between text-xs">
-                        <span style={{ color: '#4a5580' }}>Competitor</span>
-                        <span style={{ color: '#94a3b8' }}>{fmt(product.competitorPrice)}</span>
-                    </div>
-                </div>
+                )}
                 <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-1 text-xs">
                         <span className="text-yellow-400">⭐</span>
@@ -97,8 +105,105 @@ function ProductCard({ product, onWishlist, wishlist, isAdmin }) {
                         {added ? '✅ Added to Cart!' : '🛒 Add to Cart'}
                     </motion.button>
                 )}
+                {!isAdmin && (
+                    <button onClick={() => onViewReviews(product)}
+                        className="w-full mt-2 py-1.5 rounded-xl text-xs font-semibold transition-all"
+                        style={{ background: 'rgba(30,34,64,0.6)', color: '#6b7280', border: '1px solid #1e2240' }}>
+                        💬 Reviews ({product.reviewCount || 0})
+                    </button>
+                )}
             </div>
         </motion.div>
+    )
+}
+
+// ── Product Reviews Modal ────────────────────────────────────────────────
+function ProductReviewsModal({ product, onClose }) {
+    const [reviews, setReviews] = useState([])
+    const [loading, setLoading] = useState(true)
+
+    useEffect(() => {
+        if (!product) return
+        axios.get(`/api/reviews?productId=${product._id}`)
+            .then(r => { setReviews(r.data.reviews || []); setLoading(false) })
+            .catch(() => setLoading(false))
+    }, [product?._id])
+
+    if (!product) return null
+
+    const sentimentColor = { positive: '#10b981', neutral: '#f59e0b', negative: '#ef4444' }
+
+    return (
+        <AnimatePresence>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-4"
+                style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(6px)' }}
+                onClick={onClose}>
+                <motion.div initial={{ y: 60, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 60, opacity: 0 }}
+                    transition={{ type: 'spring', damping: 28 }}
+                    onClick={e => e.stopPropagation()}
+                    className="w-full max-w-lg rounded-2xl overflow-hidden"
+                    style={{ background: '#0a0d1a', border: '1px solid #1e2240', maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
+                    {/* Header */}
+                    <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid #1e2240' }}>
+                        <div>
+                            <div className="font-grotesk font-bold text-white">Customer Reviews</div>
+                            <div className="text-xs mt-0.5 truncate max-w-xs" style={{ color: '#4a5580' }}>{product.name}</div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <div className="text-center">
+                                <div className="font-grotesk font-bold text-2xl text-white">{product.rating?.toFixed(1) || '—'}</div>
+                                <div className="text-xs" style={{ color: '#f59e0b' }}>{'⭐'.repeat(Math.min(Math.round(product.rating || 0), 5))}</div>
+                                <div className="text-xs" style={{ color: '#4a5580' }}>{product.reviewCount || 0} reviews</div>
+                            </div>
+                            <button onClick={onClose} className="w-8 h-8 rounded-xl flex items-center justify-center text-lg" style={{ background: '#1e2240' }}>✕</button>
+                        </div>
+                    </div>
+                    {/* Reviews list */}
+                    <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
+                        {loading ? (
+                            <div className="flex justify-center py-8">
+                                <div className="w-8 h-8 rounded-full border-2 border-transparent animate-spin" style={{ borderTopColor: '#6c63ff' }} />
+                            </div>
+                        ) : reviews.length === 0 ? (
+                            <div className="text-center py-10">
+                                <div className="text-4xl mb-3">💬</div>
+                                <div className="text-slate-500">No reviews yet. Be the first to review!</div>
+                            </div>
+                        ) : reviews.map((r, i) => (
+                            <motion.div key={r._id || i} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}
+                                className="p-4 rounded-xl" style={{ background: 'rgba(30,34,64,0.3)', border: '1px solid #1e2240' }}>
+                                <div className="flex items-start justify-between mb-2">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+                                            style={{ background: 'linear-gradient(135deg,#6c63ff,#5a52e0)' }}>
+                                            {(r.user?.name || 'A')[0].toUpperCase()}
+                                        </div>
+                                        <div>
+                                            <div className="text-sm font-semibold text-white">{r.user?.name || 'Anonymous'}</div>
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-xs" style={{ color: '#f59e0b' }}>{'⭐'.repeat(Math.min(r.rating || 0, 5))}</span>
+                                                {r.verifiedPurchase && <span className="text-xs px-1.5 py-0.5 rounded font-semibold" style={{ background: 'rgba(16,185,129,0.12)', color: '#10b981' }}>✓ Verified</span>}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {r.sentiment && (
+                                        <span className="text-xs px-2 py-0.5 rounded-full font-semibold"
+                                            style={{ background: `${sentimentColor[r.sentiment]}15`, color: sentimentColor[r.sentiment] }}>
+                                            {r.sentiment}
+                                        </span>
+                                    )}
+                                </div>
+                                <p className="text-sm" style={{ color: '#94a3b8' }}>{r.reviewText || r.text}</p>
+                                <div className="text-xs mt-2" style={{ color: '#3a4070' }}>
+                                    {r.createdAt ? new Date(r.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : ''}
+                                </div>
+                            </motion.div>
+                        ))}
+                    </div>
+                </motion.div>
+            </motion.div>
+        </AnimatePresence>
     )
 }
 
@@ -112,6 +217,7 @@ export default function Products() {
     const [sort, setSort] = useState('')
     const [loading, setLoading] = useState(true)
     const [wishlist, setWishlist] = useState([])
+    const [selectedProduct, setSelectedProduct] = useState(null)
 
     useEffect(() => {
         setLoading(true)
@@ -140,7 +246,6 @@ export default function Products() {
                     <p className="text-sm mt-1" style={{ color: '#4a5580' }}>{products.length} products · AI-adjusted prices in ₹</p>
                 </div>
                 <div className="flex items-center gap-3">
-                    {/* Cart button — only for non-admin */}
                     {!isAdmin && (
                         <button onClick={() => setCartOpen(true)}
                             className="relative flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white"
@@ -185,9 +290,15 @@ export default function Products() {
                 : products.length === 0
                     ? <div className="text-center py-16 text-slate-500">No products found</div>
                     : <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                        {products.map(p => <ProductCard key={p._id} product={p} onWishlist={toggleWishlist} wishlist={wishlist} isAdmin={isAdmin} />)}
+                        {products.map(p => (
+                            <ProductCard key={p._id} product={p} onWishlist={toggleWishlist} wishlist={wishlist} isAdmin={isAdmin} onViewReviews={setSelectedProduct} />
+                        ))}
                     </div>
             }
+
+            {selectedProduct && (
+                <ProductReviewsModal product={selectedProduct} onClose={() => setSelectedProduct(null)} />
+            )}
         </div>
     )
 }

@@ -19,6 +19,7 @@ app.use('/api/products', require('./routes/products'));
 app.use('/api/reviews', require('./routes/reviews'));
 app.use('/api/orders', require('./routes/orders'));
 app.use('/api/analytics', require('./routes/analytics'));
+app.use('/api/payment', require('./routes/payment'));
 
 // Backwards-compat aliases
 app.post('/api/login', (req, res) => { req.url = '/api/auth/login'; require('./routes/auth')(req, res); });

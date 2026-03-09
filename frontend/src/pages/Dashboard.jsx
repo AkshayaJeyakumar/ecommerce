@@ -1,14 +1,15 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useContext } from 'react'
 import { motion } from 'framer-motion'
-import { Line, Doughnut, Bar } from 'react-chartjs-2'
-import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, ArcElement, BarElement, Tooltip, Legend, Filler } from 'chart.js'
+import { Doughnut } from 'react-chartjs-2'
+import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js'
 import axios from 'axios'
+import { AuthContext } from '../App'
 
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, ArcElement, BarElement, Tooltip, Legend, Filler)
+ChartJS.register(ArcElement, Tooltip, Legend)
 
-const chartDefaults = { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#6b7280', font: { size: 11 } } } } }
+const fmt = n => `₹${Number(n).toLocaleString('en-IN')}`
 
-function StatCard({ icon, label, value, sub, color, delay }) {
+function StatCard({ icon, label, value, sub, color, delay = 0 }) {
     return (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay }}
             className="rounded-2xl p-5 relative overflow-hidden"
@@ -17,173 +18,241 @@ function StatCard({ icon, label, value, sub, color, delay }) {
                 style={{ background: `${color}20` }}>
                 {icon}
             </div>
-            <div className="font-grotesk font-bold text-2xl text-white tabular">{value}</div>
+            <div className="font-grotesk font-bold text-2xl text-white">{value}</div>
             <div className="text-xs mt-1" style={{ color: '#4a5580' }}>{label}</div>
-            <div className="text-xs mt-2 font-semibold" style={{ color }}>{sub}</div>
-            <div className="absolute top-0 right-0 w-24 h-24 rounded-full opacity-5" style={{ background: color, transform: 'translate(30%,-30%)' }} />
+            {sub && <div className="text-xs mt-2 font-semibold" style={{ color }}>{sub}</div>}
+            <div className="absolute top-0 right-0 w-24 h-24 rounded-full opacity-5"
+                style={{ background: color, transform: 'translate(30%,-30%)' }} />
         </motion.div>
     )
 }
 
+function productImgUrl(name) {
+    const stopWords = new Set(['and', 'or', 'with', 'for', 'the', 'a', 'an', 'in', 'of'])
+    const words = name.toLowerCase().replace(/[^a-z0-9 ]/g, ' ').split(/\s+/).filter(w => w.length > 2 && !stopWords.has(w)).slice(0, 3)
+    const hash = name.split('').reduce((a, c) => a + c.charCodeAt(0), 0)
+    return `https://loremflickr.com/80/80/${encodeURIComponent(words.join(','))}?lock=${hash}`
+}
+
+const COLORS = ['#6c63ff', '#0ea5e9', '#10b981', '#f59e0b', '#f43f5e', '#8b5cf6', '#ec4899', '#14b8a6']
+
 export default function Dashboard() {
-    const [analytics, setAnalytics] = useState(null)
+    const { user } = useContext(AuthContext)
+    const isAdmin = user?.role === 'admin'
     const [products, setProducts] = useState([])
-    const [aiRunning, setAiRunning] = useState(false)
+    const [reviews, setReviews] = useState([])
+    const [orders, setOrders] = useState([])
+    const [loading, setLoading] = useState(true)
 
     useEffect(() => {
-        axios.get('/api/analytics').then(r => setAnalytics(r.data))
-        axios.get('/api/products').then(r => setProducts(r.data))
-    }, [])
+        Promise.all([
+            axios.get('/api/products'),
+            axios.get('/api/reviews'),
+            isAdmin ? axios.get('/api/orders/all').catch(() => ({ data: [] })) : Promise.resolve({ data: [] }),
+        ]).then(([p, r, o]) => {
+            setProducts(p.data || [])
+            setReviews(r.data?.reviews || [])
+            setOrders(o.data || [])
+            setLoading(false)
+        }).catch(() => setLoading(false))
+    }, [isAdmin])
 
-    async function runAI() {
-        setAiRunning(true)
-        await axios.post('/api/pricing/simulate')
-        const r = await axios.get('/api/products')
-        setProducts(r.data)
-        setAiRunning(false)
-    }
+    // Derived data
+    const trending = [...products].sort((a, b) => b.demand - a.demand).slice(0, 4)
+    const topRated = [...products].sort((a, b) => b.rating - a.rating).slice(0, 4)
+    const latestReviews = [...reviews].slice(0, 5)
 
-    const weeks = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    // Category distribution
+    const catMap = {}
+    products.forEach(p => { catMap[p.category] = (catMap[p.category] || 0) + 1 })
+    const categories = Object.entries(catMap).sort((a, b) => b[1] - a[1])
+    const maxCat = categories[0]?.[1] || 1
 
-    const revenueData = {
-        labels: weeks,
+    const doughnutData = {
+        labels: categories.map(([c]) => c),
         datasets: [{
-            label: 'Revenue (₹)',
-            data: analytics?.weeklyRevenue || [],
-            fill: true,
-            borderColor: '#6c63ff',
-            backgroundColor: 'rgba(108,99,255,0.08)',
-            tension: 0.4,
-            pointBackgroundColor: '#6c63ff',
-            pointRadius: 4,
-        }]
-    }
-
-    const demandData = {
-        labels: months,
-        datasets: [{
-            label: 'Demand %',
-            data: analytics?.demandTrend || [],
-            fill: true,
-            borderColor: '#10b981',
-            backgroundColor: 'rgba(16,185,129,0.08)',
-            tension: 0.4,
-            pointRadius: 3,
-        }]
-    }
-
-    const categoryData = {
-        labels: Object.keys(analytics?.revenueByCategory || {}),
-        datasets: [{
-            data: Object.values(analytics?.revenueByCategory || {}),
-            backgroundColor: ['#6c63ff', '#0ea5e9', '#10b981', '#f59e0b', '#f43f5e'],
+            data: categories.map(([, n]) => n),
+            backgroundColor: COLORS.slice(0, categories.length),
             borderWidth: 0,
         }]
     }
 
-    const avgDemand = products.length ? Math.round(products.reduce((s, p) => s + p.demand, 0) / products.length) : 0
-    const avgSentiment = products.length ? Math.round(products.reduce((s, p) => s + (p.sentimentScore || p.sentiment || 0), 0) / products.length) : 0
+    const totalOrders = isAdmin ? orders.length : 0
+    const pendingCount = isAdmin ? orders.filter(o => o.status === 'pending').length : 0
+    const deliveredCount = isAdmin ? orders.filter(o => o.status === 'delivered').length : 0
+
+    if (loading) return (
+        <div className="flex justify-center items-center h-64">
+            <div className="w-10 h-10 rounded-full border-2 border-transparent animate-spin" style={{ borderTopColor: '#6c63ff' }} />
+        </div>
+    )
 
     return (
-        <div>
-            {/* Header row */}
-            <div className="flex items-center justify-between mb-6">
-                <div>
-                    <h2 className="font-grotesk font-bold text-xl text-white">Platform Overview</h2>
-                    <p className="text-sm mt-1" style={{ color: '#4a5580' }}>March 2026 · AI-powered pricing dashboard</p>
-                </div>
-                <div className="text-right">
-                    <motion.button onClick={runAI} disabled={aiRunning}
-                        whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.98 }}
-                        className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white"
-                        style={{ background: 'linear-gradient(135deg,#6c63ff,#5a52e0)', boxShadow: '0 6px 20px rgba(108,99,255,0.35)' }}>
-                        {aiRunning ? <><span className="animate-spin">⚙️</span> Running AI...</> : '🤖 Run AI Simulation'}
-                    </motion.button>
-                    <p className="text-xs mt-1.5" style={{ color: '#4a5580' }}>
-                        Recalculates all product prices using demand, sentiment &amp; competitor data
-                    </p>
-                </div>
+        <div className="space-y-6">
+            {/* Header */}
+            <div>
+                <h2 className="font-grotesk font-bold text-xl text-white">
+                    {isAdmin ? '🛡 Admin Dashboard' : '👋 Welcome back, ' + (user?.name || 'there') + '!'}
+                </h2>
+                <p className="text-sm mt-1" style={{ color: '#4a5580' }}>
+                    {isAdmin
+                        ? `Platform overview · ${new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}`
+                        : 'Discover trending products and track your orders'}
+                </p>
             </div>
 
-            {/* Stats */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                <StatCard icon="📦" label="Total Products" value={products.length} sub="↑ 2 added this week" color="#6c63ff" delay={0} />
-                <StatCard icon="💰" label="Total Revenue" value="₹11.28L" sub="↑ 18.4% vs last week" color="#10b981" delay={0.06} />
-                <StatCard icon="📈" label="Avg Demand" value={`${avgDemand}%`} sub="↑ High across Electronics" color="#f59e0b" delay={0.12} />
-                <StatCard icon="💬" label="Sentiment Score" value={`${avgSentiment}%`} sub="↑ Mostly Positive" color="#0ea5e9" delay={0.18} />
+            {/* Stat Cards */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <StatCard icon="📦" label="Total Products" value={products.length} sub={`${categories.length} categories`} color="#6c63ff" delay={0} />
+                <StatCard icon="💬" label="Total Reviews" value={reviews.length}
+                    sub={`${reviews.filter(r => r.sentiment === 'positive').length} positive`} color="#10b981" delay={0.06} />
+                {isAdmin ? <>
+                    <StatCard icon="🛒" label="Total Orders" value={totalOrders}
+                        sub={`${pendingCount} pending`} color="#f59e0b" delay={0.12} />
+                    <StatCard icon="✅" label="Delivered" value={deliveredCount}
+                        sub="Successfully fulfilled" color="#0ea5e9" delay={0.18} />
+                </> : <>
+                    <StatCard icon="🔥" label="Trending Now" value={trending[0]?.name?.split(' ').slice(0, 2).join(' ') || '—'}
+                        sub={`${trending[0]?.demand || 0}% demand`} color="#f59e0b" delay={0.12} />
+                    <StatCard icon="⭐" label="Top Rated" value={topRated[0]?.name?.split(' ').slice(0, 2).join(' ') || '—'}
+                        sub={`${topRated[0]?.rating || 0} stars`} color="#0ea5e9" delay={0.18} />
+                </>}
             </div>
 
-            {/* Charts row 1 */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-5">
-                <div className="lg:col-span-2 rounded-2xl p-5" style={{ background: '#0f1224', border: '1px solid #1e2240' }}>
-                    <div className="flex items-center justify-between mb-4">
-                        <span className="font-grotesk font-bold text-white">Revenue Trend</span>
-                        <span className="text-xs px-2.5 py-1 rounded-full" style={{ background: 'rgba(16,185,129,0.1)', color: '#10b981' }}>This Week</span>
+            {/* Main content grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+
+                {/* Category Distribution */}
+                <div className="rounded-2xl p-5" style={{ background: '#0f1224', border: '1px solid #1e2240' }}>
+                    <div className="font-grotesk font-semibold text-white mb-4">📊 Category Distribution</div>
+                    {categories.length > 0 ? <>
+                        <div style={{ height: 160 }}>
+                            <Doughnut data={doughnutData} options={{
+                                responsive: true, maintainAspectRatio: false, cutout: '65%',
+                                plugins: { legend: { display: false } }
+                            }} />
+                        </div>
+                        <div className="mt-4 space-y-1.5">
+                            {categories.slice(0, 5).map(([cat, count], i) => (
+                                <div key={cat} className="flex items-center gap-2">
+                                    <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: COLORS[i] }} />
+                                    <span className="text-xs text-slate-400 flex-1 truncate">{cat}</span>
+                                    <span className="text-xs font-semibold text-white">{count}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </> : <div className="text-slate-500 text-sm text-center py-8">No products yet</div>}
+                </div>
+
+                {/* Trending Products */}
+                <div className="rounded-2xl p-5" style={{ background: '#0f1224', border: '1px solid #1e2240' }}>
+                    <div className="font-grotesk font-semibold text-white mb-4">🔥 Trending Products</div>
+                    <div className="space-y-3">
+                        {trending.map((p, i) => (
+                            <motion.div key={p._id} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.06 }}
+                                className="flex items-center gap-3 p-2.5 rounded-xl"
+                                style={{ background: 'rgba(30,34,64,0.3)', border: '1px solid rgba(30,34,64,0.6)' }}>
+                                <img src={productImgUrl(p.name)} alt={p.name} className="w-10 h-10 rounded-lg object-cover flex-shrink-0"
+                                    onError={e => { e.target.src = `https://picsum.photos/seed/${encodeURIComponent(p.name)}/40/40` }} />
+                                <div className="flex-1 min-w-0">
+                                    <div className="text-xs font-semibold text-white truncate">{p.name}</div>
+                                    <div className="text-xs mt-0.5" style={{ color: '#6c63ff' }}>{fmt(p.aiPrice)}</div>
+                                </div>
+                                <div className="text-xs font-bold px-2 py-0.5 rounded-full flex-shrink-0"
+                                    style={{ background: 'rgba(16,185,129,0.1)', color: '#10b981' }}>
+                                    {p.demand}%
+                                </div>
+                            </motion.div>
+                        ))}
                     </div>
-                    <div style={{ height: 200 }}><Line data={revenueData} options={{ ...chartDefaults, scales: { x: { ticks: { color: '#4a5580' }, grid: { color: '#1e2240' } }, y: { ticks: { color: '#4a5580' }, grid: { color: '#1e2240' } } } }} /></div>
                 </div>
+
+                {/* Top Rated Products */}
                 <div className="rounded-2xl p-5" style={{ background: '#0f1224', border: '1px solid #1e2240' }}>
-                    <div className="font-grotesk font-bold text-white mb-4">Revenue by Category</div>
-                    <div style={{ height: 200 }}><Doughnut data={categoryData} options={{ ...chartDefaults, cutout: '70%' }} /></div>
+                    <div className="font-grotesk font-semibold text-white mb-4">⭐ Top Rated</div>
+                    <div className="space-y-3">
+                        {topRated.map((p, i) => (
+                            <motion.div key={p._id} initial={{ opacity: 0, x: 8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.06 }}
+                                className="flex items-center gap-3 p-2.5 rounded-xl"
+                                style={{ background: 'rgba(30,34,64,0.3)', border: '1px solid rgba(30,34,64,0.6)' }}>
+                                <img src={productImgUrl(p.name)} alt={p.name} className="w-10 h-10 rounded-lg object-cover flex-shrink-0"
+                                    onError={e => { e.target.src = `https://picsum.photos/seed/${encodeURIComponent(p.name)}/40/40` }} />
+                                <div className="flex-1 min-w-0">
+                                    <div className="text-xs font-semibold text-white truncate">{p.name}</div>
+                                    <div className="text-xs mt-0.5" style={{ color: '#4a5580' }}>{p.category}</div>
+                                </div>
+                                <div className="text-xs font-semibold flex-shrink-0" style={{ color: '#f59e0b' }}>
+                                    ⭐ {p.rating?.toFixed(1) || '—'}
+                                </div>
+                            </motion.div>
+                        ))}
+                    </div>
                 </div>
             </div>
 
-            {/* Charts row 2 */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
-                <div className="rounded-2xl p-5" style={{ background: '#0f1224', border: '1px solid #1e2240' }}>
-                    <div className="font-grotesk font-bold text-white mb-4">Demand Forecast (12 months)</div>
-                    <div style={{ height: 180 }}><Line data={demandData} options={{ ...chartDefaults, scales: { x: { ticks: { color: '#4a5580' }, grid: { color: '#1e2240' } }, y: { ticks: { color: '#4a5580' }, grid: { color: '#1e2240' } } } }} /></div>
-                </div>
-
-                {/* Product price table */}
-                <div className="rounded-2xl p-5" style={{ background: '#0f1224', border: '1px solid #1e2240' }}>
-                    <div className="font-grotesk font-bold text-white mb-4">Live AI Prices</div>
-                    <div className="space-y-2">
-                        {products.slice(0, 5).map(p => {
-                            const delta = ((p.aiPrice - p.basePrice) / p.basePrice * 100).toFixed(1)
-                            const up = parseFloat(delta) >= 0
-                            return (
-                                <div key={p.id} className="flex items-center justify-between py-2"
-                                    style={{ borderBottom: '1px solid rgba(30,34,64,0.5)' }}>
-                                    <span className="text-sm text-slate-300 truncate flex-1">{p.name}</span>
-                                    <span className="text-sm font-semibold text-white mr-3">₹{Number(p.aiPrice).toLocaleString('en-IN')}</span>
-                                    <span className="text-xs font-bold px-2 py-0.5 rounded-full"
+            {/* Latest Reviews */}
+            <div className="rounded-2xl p-5" style={{ background: '#0f1224', border: '1px solid #1e2240' }}>
+                <div className="font-grotesk font-semibold text-white mb-4">💬 Latest Reviews</div>
+                {latestReviews.length === 0 ? (
+                    <div className="text-center text-slate-500 py-6">No reviews yet.</div>
+                ) : (
+                    <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3">
+                        {latestReviews.map((r, i) => (
+                            <motion.div key={r._id || i} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
+                                className="p-3 rounded-xl" style={{ background: 'rgba(30,34,64,0.3)', border: '1px solid #1e2240' }}>
+                                <div className="flex items-center justify-between mb-1">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+                                            style={{ background: 'linear-gradient(135deg,#6c63ff,#5a52e0)' }}>
+                                            {(r.user?.name || 'A')[0]}
+                                        </div>
+                                        <div>
+                                            <div className="text-xs font-semibold text-white">{r.user?.name || 'Anonymous'}</div>
+                                            <div className="text-xs" style={{ color: '#f59e0b' }}>{'⭐'.repeat(Math.min(r.rating || 0, 5))}</div>
+                                        </div>
+                                    </div>
+                                    <span className="text-xs px-2 py-0.5 rounded-full font-semibold"
                                         style={{
-                                            background: up ? 'rgba(16,185,129,0.1)' : 'rgba(244,63,94,0.1)',
-                                            color: up ? '#10b981' : '#ef4444'
+                                            background: r.sentiment === 'positive' ? 'rgba(16,185,129,0.1)' : r.sentiment === 'negative' ? 'rgba(239,68,68,0.1)' : 'rgba(245,158,11,0.1)',
+                                            color: r.sentiment === 'positive' ? '#10b981' : r.sentiment === 'negative' ? '#ef4444' : '#f59e0b'
                                         }}>
-                                        {up ? '+' : ''}{delta}%
+                                        {r.sentiment || 'neutral'}
                                     </span>
                                 </div>
-                            )
-                        })}
+                                <p className="text-xs mt-2 line-clamp-2" style={{ color: '#94a3b8' }}>{r.reviewText || r.text}</p>
+                                <div className="text-xs mt-1.5" style={{ color: '#3a4070' }}>
+                                    {r.product?.name || ''} · {r.createdAt ? new Date(r.createdAt).toLocaleDateString('en-IN') : ''}
+                                </div>
+                            </motion.div>
+                        ))}
                     </div>
-                </div>
+                )}
             </div>
 
-            {/* AI Activity feed */}
-            <div className="rounded-2xl p-5" style={{ background: '#0f1224', border: '1px solid #1e2240' }}>
-                <div className="font-grotesk font-bold text-white mb-4">🤖 AI Activity Feed</div>
-                <div className="space-y-3">
-                    {[
-                        { icon: '📈', msg: '4K Gaming Monitor price increased +8% due to high demand (91%)', t: 'Just now', c: '#6c63ff' },
-                        { icon: '💬', msg: 'Positive sentiment surge on Noise Cancelling Earbuds — price adjusted +3%', t: '3m ago', c: '#10b981' },
-                        { icon: '🔍', msg: 'Competitor TechZone dropped Fitness Watch to ₹14,999 — AI matched', t: '12m ago', c: '#f59e0b' },
-                        { icon: '📉', msg: 'Mechanical Keyboard low demand — AI applied -7% discount', t: '28m ago', c: '#ef4444' },
-                    ].map((item, i) => (
-                        <motion.div key={i} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.08 }}
-                            className="flex items-start gap-3 p-3 rounded-xl" style={{ background: 'rgba(30,34,64,0.3)' }}>
-                            <span className="text-lg">{item.icon}</span>
-                            <div className="flex-1">
-                                <div className="text-sm text-slate-300">{item.msg}</div>
-                                <div className="text-xs mt-1" style={{ color: '#4a5580' }}>{item.t}</div>
-                            </div>
-                            <div className="w-2 h-2 rounded-full mt-1 shrink-0" style={{ background: item.c }} />
-                        </motion.div>
-                    ))}
+            {/* Admin-only: AI Activity Feed */}
+            {isAdmin && (
+                <div className="rounded-2xl p-5" style={{ background: '#0f1224', border: '1px solid #1e2240' }}>
+                    <div className="font-grotesk font-semibold text-white mb-4">🤖 AI Activity Feed</div>
+                    <div className="space-y-2">
+                        {[
+                            { icon: '📈', msg: `AI updated prices on ${products.length} products`, t: 'Today', c: '#6c63ff' },
+                            { icon: '💬', msg: `${reviews.filter(r => r.sentiment === 'positive').length} positive reviews driving price adjustments`, t: 'Today', c: '#10b981' },
+                            { icon: '🛒', msg: `${pendingCount} orders pending admin action`, t: 'Now', c: '#f59e0b' },
+                            { icon: '📦', msg: `${products.filter(p => (p.stock || 0) <= 5).length} products at critically low stock`, t: 'Alert', c: '#ef4444' },
+                        ].map((item, i) => (
+                            <motion.div key={i} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.06 }}
+                                className="flex items-start gap-3 p-3 rounded-xl" style={{ background: 'rgba(30,34,64,0.3)' }}>
+                                <span className="text-lg">{item.icon}</span>
+                                <div className="flex-1">
+                                    <div className="text-sm text-slate-300">{item.msg}</div>
+                                    <div className="text-xs mt-1" style={{ color: '#4a5580' }}>{item.t}</div>
+                                </div>
+                                <div className="w-2 h-2 rounded-full mt-1 shrink-0" style={{ background: item.c }} />
+                            </motion.div>
+                        ))}
+                    </div>
                 </div>
-            </div>
+            )}
         </div>
     )
 }

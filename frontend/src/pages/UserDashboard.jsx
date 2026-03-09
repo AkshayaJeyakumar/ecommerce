@@ -191,9 +191,198 @@ function OrderCard({ order, onAction }) {
     )
 }
 
-export default function UserDashboard() {
+// ── ReviewForm ─────────────────────────────────────────────────────────────
+function StarPicker({ value, onChange }) {
+    const [hover, setHover] = useState(0)
+    return (
+        <div className="flex gap-1">
+            {[1, 2, 3, 4, 5].map(n => (
+                <button key={n} type="button"
+                    onMouseEnter={() => setHover(n)} onMouseLeave={() => setHover(0)}
+                    onClick={() => onChange(n)}
+                    className="text-2xl transition-transform hover:scale-110">
+                    <span style={{ color: n <= (hover || value) ? '#f59e0b' : '#2a2e50' }}>★</span>
+                </button>
+            ))}
+        </div>
+    )
+}
+
+function ReviewForm({ orders, reviews, onSaved }) {
+    // Collect all distinct delivered products
+    const deliveredProducts = []
+    const seen = new Set()
+    orders.filter(o => o.status === 'delivered').forEach(o => {
+        (o.items || []).forEach(item => {
+            const id = item.product?._id || item.product
+            if (id && !seen.has(id)) {
+                seen.add(id)
+                deliveredProducts.push({ id, name: item.name || item.product?.name || 'Product' })
+            }
+        })
+    })
+
+    const alreadyReviewed = new Set(reviews.map(r => r.product?._id || r.product?.id || r.product))
+
+    const [show, setShow] = useState(false)
+    const [productId, setProductId] = useState('')
+    const [rating, setRating] = useState(0)
+    const [text, setText] = useState('')
+    const [saving, setSaving] = useState(false)
+    const [err, setErr] = useState('')
+    const [success, setSuccess] = useState('')
+
+    async function submit(e) {
+        e.preventDefault()
+        if (!productId) { setErr('Please select a product.'); return }
+        if (!rating) { setErr('Please select a star rating.'); return }
+        if (!text.trim()) { setErr('Please write your review.'); return }
+        setSaving(true); setErr(''); setSuccess('')
+        try {
+            await axios.post('/api/reviews', { productId, rating, reviewText: text.trim() })
+            setSuccess('✅ Review submitted!')
+            setProductId(''); setRating(0); setText(''); setShow(false)
+            onSaved()
+        } catch (e) { setErr(e.response?.data?.message || 'Failed to submit review.') }
+        setSaving(false)
+    }
+
+    if (deliveredProducts.length === 0) return null
+
+    return (
+        <div className="rounded-2xl p-5" style={{ background: '#0f1224', border: '1px solid rgba(108,99,255,0.25)' }}>
+            <div className="flex items-center justify-between">
+                <div>
+                    <div className="font-grotesk font-semibold text-white">✍️ Write a Review</div>
+                    <div className="text-xs mt-0.5" style={{ color: '#4a5580' }}>Share your experience with a delivered product</div>
+                </div>
+                <motion.button onClick={() => setShow(s => !s)} whileTap={{ scale: 0.95 }}
+                    className="px-4 py-2 rounded-xl text-sm font-semibold text-white"
+                    style={{ background: show ? 'rgba(30,34,64,0.6)' : 'linear-gradient(135deg,#6c63ff,#5a52e0)' }}>
+                    {show ? '✕ Cancel' : '+ Write Review'}
+                </motion.button>
+            </div>
+
+            <AnimatePresence>
+                {show && (
+                    <motion.form onSubmit={submit}
+                        initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
+                        className="mt-4 space-y-4 overflow-hidden">
+                        {/* Product picker */}
+                        <div>
+                            <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: '#4a5580' }}>Select Product</label>
+                            <select value={productId} onChange={e => setProductId(e.target.value)}
+                                className="w-full px-3 py-2.5 rounded-xl text-sm text-white outline-none"
+                                style={{ background: '#1a1e38', border: '1px solid #1e2240' }}>
+                                <option value="">– Choose –</option>
+                                {deliveredProducts.map(p => (
+                                    <option key={p.id} value={p.id} disabled={alreadyReviewed.has(p.id)}>
+                                        {p.name}{alreadyReviewed.has(p.id) ? ' (already reviewed)' : ''}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        {/* Star rating */}
+                        <div>
+                            <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: '#4a5580' }}>Rating</label>
+                            <StarPicker value={rating} onChange={setRating} />
+                            {rating > 0 && <div className="text-xs mt-1" style={{ color: '#f59e0b' }}>{['', 'Poor', 'Fair', 'Good', 'Very Good', 'Excellent'][rating]}</div>}
+                        </div>
+
+                        {/* Review text */}
+                        <div>
+                            <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: '#4a5580' }}>Your Review</label>
+                            <textarea value={text} onChange={e => setText(e.target.value)} rows={3}
+                                placeholder="Describe your experience with this product..."
+                                className="w-full px-3 py-2.5 rounded-xl text-sm text-white outline-none resize-none"
+                                style={{ background: '#1a1e38', border: '1px solid #1e2240', fontFamily: 'Inter' }} />
+                        </div>
+
+                        {err && <div className="text-xs px-3 py-2 rounded-lg" style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444' }}>{err}</div>}
+                        {success && <div className="text-xs px-3 py-2 rounded-lg" style={{ background: 'rgba(16,185,129,0.1)', color: '#10b981' }}>{success}</div>}
+
+                        <motion.button type="submit" disabled={saving} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+                            className="w-full py-2.5 rounded-xl text-sm font-semibold text-white"
+                            style={{ background: 'linear-gradient(135deg,#6c63ff,#5a52e0)', opacity: saving ? 0.7 : 1 }}>
+                            {saving ? '⏳ Submitting...' : '🌟 Submit Review'}
+                        </motion.button>
+                    </motion.form>
+                )}
+            </AnimatePresence>
+        </div>
+    )
+}
+
+// ── ReviewCard ──────────────────────────────────────────────────────────────
+function ReviewCard({ review: r, onSaved }) {
+    const [editing, setEditing] = useState(false)
+    const [rating, setRating] = useState(r.rating)
+    const [text, setText] = useState(r.reviewText || r.text || '')
+    const [saving, setSaving] = useState(false)
+    const [err, setErr] = useState('')
+
+    async function saveEdit(e) {
+        e.preventDefault()
+        if (!rating) { setErr('Select a rating.'); return }
+        if (!text.trim()) { setErr('Write your review.'); return }
+        setSaving(true); setErr('')
+        try {
+            await axios.put(`/api/reviews/${r._id}`, { rating, reviewText: text.trim() })
+            setEditing(false); onSaved()
+        } catch (e) { setErr(e.response?.data?.message || 'Update failed') }
+        setSaving(false)
+    }
+
+    return (
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+            className="rounded-2xl p-4" style={{ background: '#0f1224', border: '1px solid #1e2240' }}>
+            <div className="flex items-start justify-between">
+                <div>
+                    <div className="text-sm font-semibold text-white">{r.product?.name || 'Product'}</div>
+                    {!editing && <div className="text-yellow-400 text-sm mt-0.5">{'⭐'.repeat(Math.min(r.rating, 5))}</div>}
+                </div>
+                <div className="flex items-center gap-2">
+                    {r.verifiedPurchase && (
+                        <span className="text-xs px-2 py-0.5 rounded-full font-semibold"
+                            style={{ background: 'rgba(16,185,129,0.1)', color: '#10b981' }}>✓ Verified</span>
+                    )}
+                    <button onClick={() => setEditing(e => !e)}
+                        className="text-xs px-3 py-1 rounded-lg font-semibold transition-all"
+                        style={{ background: editing ? 'rgba(239,68,68,0.1)' : 'rgba(108,99,255,0.1)', color: editing ? '#ef4444' : '#a5b4fc' }}>
+                        {editing ? '✕ Cancel' : '✏️ Edit'}
+                    </button>
+                </div>
+            </div>
+
+            {editing ? (
+                <form onSubmit={saveEdit} className="mt-3 space-y-3">
+                    <StarPicker value={rating} onChange={setRating} />
+                    <textarea value={text} onChange={e => setText(e.target.value)} rows={3}
+                        className="w-full px-3 py-2.5 rounded-xl text-sm text-white outline-none resize-none"
+                        style={{ background: '#1a1e38', border: '1px solid #1e2240', fontFamily: 'Inter' }} />
+                    {err && <div className="text-xs" style={{ color: '#ef4444' }}>{err}</div>}
+                    <motion.button type="submit" disabled={saving} whileTap={{ scale: 0.97 }}
+                        className="px-4 py-2 rounded-xl text-sm font-semibold text-white"
+                        style={{ background: 'linear-gradient(135deg,#6c63ff,#5a52e0)' }}>
+                        {saving ? '⏳ Saving...' : '💾 Save Changes'}
+                    </motion.button>
+                </form>
+            ) : (
+                <>
+                    <p className="text-sm mt-2" style={{ color: '#94a3b8' }}>{r.reviewText || r.text}</p>
+                    <div className="text-xs mt-2" style={{ color: '#4a5580' }}>
+                        {r.createdAt ? new Date(r.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : ''}
+                    </div>
+                </>
+            )}
+        </motion.div>
+    )
+}
+
+export default function UserDashboard({ defaultTab = 'orders' }) {
     const { user } = useContext(AuthContext)
-    const [tab, setTab] = useState('orders')
+    const [tab, setTab] = useState(defaultTab)
     const [orders, setOrders] = useState([])
     const [wishlist, setWishlist] = useState([])
     const [reviews, setReviews] = useState([])
@@ -317,28 +506,12 @@ export default function UserDashboard() {
 
                     {/* ── REVIEWS ── */}
                     {tab === 'reviews' && (
-                        <motion.div key="reviews" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-3">
+                        <motion.div key="reviews" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
+                            <ReviewForm orders={orders} reviews={reviews} onSaved={loadData} />
                             {reviews.length === 0 ? (
-                                <div className="text-center py-12 text-slate-500">No reviews yet. Purchase products to write reviews!</div>
+                                <div className="text-center py-8 text-slate-500">No reviews yet. Write a review for a delivered product above!</div>
                             ) : reviews.map((r, i) => (
-                                <motion.div key={r._id}
-                                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.05 }}
-                                    className="rounded-2xl p-4" style={{ background: '#0f1224', border: '1px solid #1e2240' }}>
-                                    <div className="flex items-start justify-between">
-                                        <div>
-                                            <div className="text-sm font-semibold text-white">{r.product?.name || 'Product'}</div>
-                                            <div className="text-yellow-400 text-sm mt-0.5">{'⭐'.repeat(r.rating)}</div>
-                                        </div>
-                                        {r.verifiedPurchase && (
-                                            <span className="text-xs px-2 py-0.5 rounded-full font-semibold"
-                                                style={{ background: 'rgba(16,185,129,0.1)', color: '#10b981' }}>✓ Verified</span>
-                                        )}
-                                    </div>
-                                    <p className="text-sm mt-2" style={{ color: '#94a3b8' }}>{r.reviewText || r.text}</p>
-                                    <div className="text-xs mt-2" style={{ color: '#4a5580' }}>
-                                        {r.createdAt ? new Date(r.createdAt).toLocaleDateString('en-IN') : ''}
-                                    </div>
-                                </motion.div>
+                                <ReviewCard key={r._id} review={r} onSaved={loadData} />
                             ))}
                         </motion.div>
                     )}

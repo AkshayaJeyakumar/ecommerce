@@ -64,11 +64,12 @@ export default function Analytics() {
     }
 
     const kpis = [
-        { label: 'Weekly Revenue', value: '$432K', sub: '↑ 18.4%', color: '#6c63ff' },
+        { label: 'Weekly Revenue', value: '₹36.0L', sub: '↑ 18.4%', color: '#6c63ff' },
         { label: 'Total Orders', value: '2,915', sub: '↑ 12.1%', color: '#10b981' },
         { label: 'Avg AI Adjustment', value: '+2.3%', sub: 'Last 7 days', color: '#f59e0b' },
         { label: 'Conversion Rate', value: '3.7%', sub: '↑ 0.4%', color: '#0ea5e9' },
     ]
+
 
     return (
         <div className="space-y-5">
